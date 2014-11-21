@@ -49,7 +49,7 @@ void drawLine(MarkerType type, vector<Point>& points) {
       randomTree.publish(lines);
       break;
     case SELECTED_TREE:
-      lines.color.r = 1.0;
+      lines.color.b = 1.0;
       lines.color.a = 1.0;
       selectedPath.publish(lines);
       break;

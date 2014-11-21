@@ -1,6 +1,5 @@
 #include "rrt.h"
 #include "turtlebot_example.h"
-#include "marker.h"
 #include <tf/transform_datatypes.h>
 #include <tf/tf.h>
 
@@ -96,7 +95,7 @@ void insertOrdered(vector<Milestone*>& nodes, Milestone* node, Pose goal) {
 Milestone* getRandomNode(vector<Milestone*> nodes) {
   uniform_real_distribution<> picker(0, 1);
   for(int i = 0; i < nodes.size(); i++) {
-    bool pick = picker(gen) > 0.8 ? true:false;
+    bool pick = picker(gen) > 0.6 ? true:false;
     if (pick) {
       ROS_INFO("Picked node %d", i);
       return nodes[i];
@@ -121,11 +120,11 @@ vector<Milestone*> findPath(Pose start, Pose goal, Map map) {
       continue;
     } else {
       insertOrdered(tree, newBranch, goal);
-      newBranch->draw();
+      newBranch->draw(RANDOM_TREE);
     }
     float distanceToGoal = getDistance(newBranch->getDestination(), goal);
     ROS_INFO("Distance to goal: %f", distanceToGoal);
-    if (distanceToGoal < 0.5) {
+    if (distanceToGoal < 0.3) {
       finalNode = newBranch;
       ROS_INFO("End position: x: %f, y: %f", finalNode->getDestination().position.x, finalNode->getDestination().position.y);
       break;
@@ -140,10 +139,13 @@ vector<Milestone*> findPath(Pose start, Pose goal, Map map) {
   }
 
   reverse(route.begin(), route.end());
+
+  for (int i = 1; i < route.size(); i++)
+    route[i]->draw(SELECTED_TREE);
   return route;
 }
 
-void Milestone::draw() {
+void Milestone::draw(MarkerType color) {
   Pose start = mOrigin->getDestination();
   vector<Point> points;
   points.push_back(start.position);
@@ -167,5 +169,5 @@ void Milestone::draw() {
     points.push_back(start.position);
   }
 
-  drawLine(RANDOM_TREE, points);
+  drawLine(color, points);
 }

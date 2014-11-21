@@ -2,6 +2,7 @@
 
 #include <vector>
 #include "map.h"
+#include "marker.h"
 
 using namespace std;
 using namespace geometry_msgs;
@@ -22,7 +23,7 @@ class Milestone {
     Pose getDestination(Map map);
     Milestone* makeRandomNode(Map map);
     bool isValid() {return mIsValid;};
-    void draw();
+    void draw(MarkerType color);
 
   private:
     Milestone* mOrigin;
