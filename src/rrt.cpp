@@ -1,5 +1,6 @@
 #include "rrt.h"
 #include "turtlebot_example.h"
+#include "marker.h"
 #include <tf/transform_datatypes.h>
 #include <tf/tf.h>
 
@@ -15,14 +16,22 @@ Milestone::Milestone(Milestone* origin, float velocityLinear,
   getDestination(map);
 }
 
+Milestone::Milestone(Pose destination) : mOrigin(NULL),
+  mDestination(destination), mIsValid(true) {
+}
+
+Pose Milestone::getDestination() {
+  return mDestination;
+}
+
 Pose Milestone::getDestination(Map map) {
   if (mIsValid == false) {
     Pose destination = mOrigin->getDestination(map);
-    tf::Quaternion quart;
+    tf::Quaternion quat;
     double r, p, yaw;
 
-    tf::quaternionMsgToTF(destination.orientation, quart);
-    tf::Matrix3x3(quart).getRPY(r, p, yaw);
+    tf::quaternionMsgToTF(destination.orientation, quat);
+    tf::Matrix3x3(quat).getRPY(r, p, yaw);
 
     for (int i = 0; i < mDuration * UPDATES_PER_SEC; i++) {
       destination.position.x +=
@@ -34,7 +43,9 @@ Pose Milestone::getDestination(Map map) {
       tf::quaternionTFToMsg(
           tf::createQuaternionFromRPY(r, p, yaw),
           destination.orientation);
+      //ROS_INFO("Check obstacle exist.");
       if (map.hasObstacle(destination)) {
+        //ROS_INFO("Fail node");
         return mDestination;
       }
     }
@@ -56,6 +67,7 @@ Milestone* Milestone::makeRandomNode(Map map) {
     int duration = durationGenerator(gen);
     Milestone* newNode = new Milestone(this, velocityLinear, velocityAngular,
         duration, map);
+    //ROS_INFO("Check new node valid");
     if (newNode->isValid())
       return newNode;
     else
@@ -63,4 +75,97 @@ Milestone* Milestone::makeRandomNode(Map map) {
   }
 
   return NULL;
+}
+
+float getDistance(Pose position1, Pose position2) {
+  float x = position1.position.x - position2.position.x;
+  float y = position1.position.y - position2.position.y;
+
+  return sqrt(x * x + y * y);
+}
+
+void insertOrdered(vector<Milestone*>& nodes, Milestone* node, Pose goal) {
+  float newDist = getDistance(node->getDestination(), goal);
+  vector<Milestone*>::iterator iter = nodes.begin();
+  while (iter != nodes.end() && getDistance((*iter)->getDestination(), goal) < newDist) {
+    iter++;
+  }
+  nodes.insert(iter, node);
+}
+
+Milestone* getRandomNode(vector<Milestone*> nodes) {
+  uniform_real_distribution<> picker(0, 1);
+  for(int i = 0; i < nodes.size(); i++) {
+    bool pick = picker(gen) > 0.8 ? true:false;
+    if (pick) {
+      ROS_INFO("Picked node %d", i);
+      return nodes[i];
+    }
+  }
+
+  ROS_INFO("Default to node %d", 0);
+  return nodes[0];
+}
+
+vector<Milestone*> findPath(Pose start, Pose goal, Map map) {
+  vector<Milestone*> tree;
+  Milestone* finalNode = NULL;
+  ROS_INFO("Add origin to tree");
+  tree.push_back(new Milestone(start));
+  for (int i = 0; i < MAX_BRANCH; i++) {
+    Milestone* branchRoot = getRandomNode(tree);
+    ROS_INFO("Try to create random Node");
+    Milestone* newBranch = branchRoot->makeRandomNode(map);
+    if (newBranch == NULL) {
+      ROS_INFO("No valid random node created");
+      continue;
+    } else {
+      insertOrdered(tree, newBranch, goal);
+      newBranch->draw();
+    }
+    float distanceToGoal = getDistance(newBranch->getDestination(), goal);
+    ROS_INFO("Distance to goal: %f", distanceToGoal);
+    if (distanceToGoal < 0.5) {
+      finalNode = newBranch;
+      ROS_INFO("End position: x: %f, y: %f", finalNode->getDestination().position.x, finalNode->getDestination().position.y);
+      break;
+    }
+  }
+
+  vector<Milestone*> route;
+  route.push_back(finalNode);
+  while(finalNode->getOrigin() != NULL) {
+    route.push_back(finalNode->getOrigin());
+    finalNode = finalNode->getOrigin();
+  }
+
+  reverse(route.begin(), route.end());
+  return route;
+}
+
+void Milestone::draw() {
+  Pose start = mOrigin->getDestination();
+  vector<Point> points;
+  points.push_back(start.position);
+
+  tf::Quaternion quat;
+  double r, p, yaw;
+
+  tf::quaternionMsgToTF(start.orientation, quat);
+  tf::Matrix3x3(quat).getRPY(r, p, yaw);
+
+  for (int i = 0; i < mDuration * UPDATES_PER_SEC; i++) {
+    start.position.x +=
+        1 / float(UPDATES_PER_SEC) * mVelocityLinear * cos(yaw);
+    start.position.y +=
+        1 / float(UPDATES_PER_SEC) * mVelocityLinear * sin(yaw);
+    yaw += 1 / float(UPDATES_PER_SEC) * mVelocityAngular;
+
+    tf::quaternionTFToMsg(
+        tf::createQuaternionFromRPY(r, p, yaw),
+        start.orientation);
+    points.push_back(start.position);
+  }
+
+  drawLine(RANDOM_TREE, points);
 }

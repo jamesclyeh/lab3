@@ -3,31 +3,32 @@
  */
 
 #include "turtlebot_example.h"
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
+#include "rrt.h"
+#include "marker.h"
 #include <iostream>
+#include <ros/ros.h>
 
 ros::Publisher marker_pub;
 bool isMapReceived;
+bool init;
 geometry_msgs::Pose starting_position;
 Map* current_map;
 
 
 // Live
-void pose_callback(const turtlebot_example::ips_msg& msg) {
-    double X = msg.X; // Robot X psotition
-    double Y = msg.Y; // Robot Y psotition
-    double Yaw = msg.Yaw; // Robot Yaw
-
-    std::cout << "X: " << X << ", Y: " << Y << ", Yaw: " << Yaw << std::endl ;
+void pose_callback(const PoseWithCovarianceStamped msg) {
+    if (init) {
+      starting_position = msg.pose.pose;
+      init = false;
+    }
 }
 
 //Example of drawing a curve
-void drawCurve(int k) {
+void drawCurve(int k, vector<Milestone*> route) {
     // Curves are drawn as a series of stright lines
     // Simply sample your curves into a series of points
 
-    double x = 0;
-    double y = 0;
-    double steps = 50;
 
     visualization_msgs::Marker lines;
     lines.header.frame_id = "/map";
@@ -41,16 +42,8 @@ void drawCurve(int k) {
     lines.color.a = 1.0;
 
     //generate curve points
-    for(int i = 0; i < steps; i++) {
-        geometry_msgs::Point p;
-        p.x = x;
-        p.y = y;
-        p.z = 0; //not used
-        lines.points.push_back(p);
-
-        //curve model
-        x = x+0.1;
-        y = sin(0.1*i*k);
+    for(int i = 0; i < route.size(); i++) {
+        lines.points.push_back(route[i]->getDestination().position);
     }
 
     //publish new curve
@@ -61,7 +54,6 @@ void drawCurve(int k) {
  * Callback function for the Map topic
  */
 void map_callback(const nav_msgs::OccupancyGrid& msg) {
-    starting_position = msg.info.origin;
     current_map = new Map(msg);
     isMapReceived = true;
 }
@@ -75,6 +67,7 @@ int main(int argc, char **argv) {
     //Initialize the ROS framework
     ros::init(argc,argv,"main_control");
     ros::NodeHandle n;
+    markerInit(n);
     ros::Rate loop_rate(UPDATES_PER_SEC);
 
     //Subscribe to the desired topics and assign callbacks
@@ -85,26 +78,24 @@ int main(int argc, char **argv) {
     ros::Publisher velocity_publisher = n.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
     marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
 
-    //Velocity control variable
-    geometry_msgs::Twist vel;
+    isMapReceived = false;
+    init = true;
 
     while (!isMapReceived) {
         refresh(loop_rate);
+        loop_rate.sleep();
+        ROS_INFO("Waiting for map");
     }
+    ROS_INFO("Map received");
 
+    Pose goal;
+    goal.position.x = 7;
+    goal.position.y = 4;
+    goal.position.z = 0;
+    vector<Milestone*> route = findPath(starting_position, goal, *current_map);
+    //drawCurve(1, route);
     while (ros::ok()) {
         refresh(loop_rate);
-
-        //Draw Curves
-        drawCurve(1);
-        drawCurve(2);
-        drawCurve(4);
-
-        //Main loop code goes here:
-        vel.linear.x = 0.1; // set linear speed
-        vel.angular.z = 0.3; // set angular speed
-
-        velocity_publisher.publish(vel); // Publish the command velocity
     }
 
     return 0;

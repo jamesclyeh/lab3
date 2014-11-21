@@ -2,10 +2,10 @@
 //
 // turtlebot_example.cpp
 // This file contains example code for use with ME 597 lab 2
-// It publishes a pose of the robot in simulation with respect
+// It publishes a pose of the robot in simulation with respect 
 // to the inertial frame.
 //
-// Author: James Servos
+// Author: James Servos 
 //
 // //////////////////////////////////////////////////////////
 
@@ -16,8 +16,8 @@
 #include <gazebo_msgs/ModelStates.h>
 #include <visualization_msgs/Marker.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <turtlebot_example/ips_msg.h>
 #include <tf/transform_broadcaster.h>
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 ros::Publisher pose_publisher;
 tf::TransformBroadcaster *br;
@@ -27,18 +27,11 @@ tf::Transform *tform;
 void pose_callback(const gazebo_msgs::ModelStates& msg)
 {
 	//This function is called when a new position message is received
-	turtlebot_example::ips_msg curpose;
+	geometry_msgs::PoseWithCovarianceStamped curpose;
 	curpose.header.stamp = ros::Time::now();
-	curpose.tag_id = 0;
-	curpose.hamming_distance = 0;
 	curpose.header.frame_id="/map";
-	curpose.X = msg.pose[1].position.x;
-	curpose.Y = msg.pose[1].position.y;
-	curpose.Z = msg.pose[1].position.z;
-	curpose.Roll = 0;
-	curpose.Pitch = 0;
-	curpose.Yaw = tf::getYaw(msg.pose[1].orientation); // Robot Yaw
-	//republish pose for rviz
+	curpose.pose.pose.position = msg.pose[1].position;
+	curpose.pose.pose.orientation = msg.pose[1].orientation;
 	pose_publisher.publish(curpose);
 
 	// send transform
@@ -61,12 +54,12 @@ int main(int argc, char **argv)
 
     //Subscribe to the desired topics and assign callbacks
     ros::Subscriber pose_sub = n.subscribe("/gazebo/model_states", 1, pose_callback);
-    pose_publisher = n.advertise<turtlebot_example::ips_msg>("/indoor_pos", 1, true);
-
+    pose_publisher = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("/indoor_pos", 1, true);
+  
 
     //Set the loop rate
     ros::Rate loop_rate(40);    //40Hz update rate
-
+	
 
     while (ros::ok())
     {

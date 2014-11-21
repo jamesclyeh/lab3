@@ -16,21 +16,18 @@
 #include <gazebo_msgs/ModelStates.h>
 #include <visualization_msgs/Marker.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <turtlebot_example/ips_msg.h>
-
+#include <geometry_msgs/PoseWithCovarianceStamped.h>
 
 ros::Publisher pose_publisher;
 
-void pose_callback(const turtlebot_example::ips_msg& msg)
+void pose_callback(const geometry_msgs::PoseWithCovarianceStamped & msg)
 {
 	//This function is called when a new position message is received
-    geometry_msgs::PoseStamped curpose;
+    	geometry_msgs::PoseWithCovarianceStamped curpose;
 	curpose.header.stamp = ros::Time::now();
 	curpose.header.frame_id="/map";
-	curpose.pose.position.x = msg.X;
-	curpose.pose.position.y = msg.Y;
-	curpose.pose.position.z = msg.Z;
-    curpose.pose.orientation = tf::createQuaternionMsgFromRollPitchYaw(msg.Roll, msg.Pitch, msg.Yaw);
+	curpose.pose.pose.position = msg.pose.pose.position;
+	curpose.pose.pose.orientation = msg.pose.pose.orientation;
 	//republish pose for rviz
 	pose_publisher.publish(curpose);
 }
@@ -44,7 +41,7 @@ int main(int argc, char **argv)
 
     //Subscribe to the desired topics and assign callbacks
     ros::Subscriber pose_sub = n.subscribe("/indoor_pos", 1, pose_callback);
-    pose_publisher = n.advertise<geometry_msgs::PoseStamped>("/vis_pos", 1, true);
+    pose_publisher = n.advertise<geometry_msgs::PoseWithCovarianceStamped>("/vis_pos", 1, true);
   
 
     //Set the loop rate

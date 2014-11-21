@@ -15,6 +15,8 @@ class Map {
     private:
         int mGridWidth;
         int mGridHeight;
+        int mXOffset;
+        int mYOffset;
         std::vector<std::vector<int> > mMap;
         float mResolution;
         std::vector<int> xyToGrid(float x, float y);
