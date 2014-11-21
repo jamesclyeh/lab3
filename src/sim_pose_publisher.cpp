@@ -2,10 +2,10 @@
 //
 // turtlebot_example.cpp
 // This file contains example code for use with ME 597 lab 2
-// It publishes a pose of the robot in simulation with respect 
+// It publishes a pose of the robot in simulation with respect
 // to the inertial frame.
 //
-// Author: James Servos 
+// Author: James Servos
 //
 // //////////////////////////////////////////////////////////
 
@@ -62,11 +62,11 @@ int main(int argc, char **argv)
     //Subscribe to the desired topics and assign callbacks
     ros::Subscriber pose_sub = n.subscribe("/gazebo/model_states", 1, pose_callback);
     pose_publisher = n.advertise<turtlebot_example::ips_msg>("/indoor_pos", 1, true);
-  
+
 
     //Set the loop rate
     ros::Rate loop_rate(40);    //40Hz update rate
-	
+
 
     while (ros::ok())
     {

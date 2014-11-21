@@ -8,17 +8,11 @@
 ros::Publisher marker_pub;
 bool isMapReceived;
 geometry_msgs::Pose starting_position;
-map* current_map;
+Map* current_map;
 
 
-/**
- * Callback function for the Position topic
- */
+// Live
 void pose_callback(const turtlebot_example::ips_msg& msg) {
-    if(msg.tag_id != TAGID) {
-      return;
-    }
-
     double X = msg.X; // Robot X psotition
     double Y = msg.Y; // Robot Y psotition
     double Yaw = msg.Yaw; // Robot Yaw
@@ -52,11 +46,11 @@ void drawCurve(int k) {
         p.x = x;
         p.y = y;
         p.z = 0; //not used
-        lines.points.push_back(p); 
+        lines.points.push_back(p);
 
         //curve model
         x = x+0.1;
-        y = sin(0.1*i*k);   
+        y = sin(0.1*i*k);
     }
 
     //publish new curve
@@ -68,7 +62,7 @@ void drawCurve(int k) {
  */
 void map_callback(const nav_msgs::OccupancyGrid& msg) {
     starting_position = msg.info.origin;
-    current_map = new map(msg);
+    current_map = new Map(msg);
     isMapReceived = true;
 }
 
@@ -90,15 +84,13 @@ int main(int argc, char **argv) {
     //Setup topics to Publish from this node
     ros::Publisher velocity_publisher = n.advertise<geometry_msgs::Twist>("/cmd_vel_mux/input/navi", 1);
     marker_pub = n.advertise<visualization_msgs::Marker>("visualization_marker", 1, true);
-    
+
     //Velocity control variable
     geometry_msgs::Twist vel;
-    
+
     while (!isMapReceived) {
         refresh(loop_rate);
-    }	
-
-    std::cout << current_map->hasObstacle(starting_position.position.x, starting_position.position.y);    
+    }
 
     while (ros::ok()) {
         refresh(loop_rate);
@@ -107,7 +99,7 @@ int main(int argc, char **argv) {
         drawCurve(1);
         drawCurve(2);
         drawCurve(4);
-    
+
         //Main loop code goes here:
         vel.linear.x = 0.1; // set linear speed
         vel.angular.z = 0.3; // set angular speed

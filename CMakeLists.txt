@@ -31,7 +31,7 @@ generate_messages(DEPENDENCIES std_msgs)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #add_executable(turtlebot_example src/turtlebot_example.cpp src/Map.cpp src/marker.cpp src/RRT.cpp src/tracking.cpp)
-add_executable(turtlebot_example src/turtlebot_example.cpp src/map.cpp)
+add_executable(turtlebot_example src/turtlebot_example.cpp src/map.cpp src/rrt.cpp)
 add_dependencies(turtlebot_example turtlebot_example_generate_messages_cpp)
 add_executable(sim_pose_publisher src/sim_pose_publisher.cpp)
 add_dependencies(sim_pose_publisher turtlebot_example_generate_messages_cpp)
@@ -49,3 +49,5 @@ target_link_libraries(sim_pose_publisher
 target_link_libraries(vis_pose_publisher
    ${catkin_LIBRARIES}
 )
+
+set_target_properties(turtlebot_example PROPERTIES COMPILE_FLAGS -std=c++0x)

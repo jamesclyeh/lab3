@@ -9,6 +9,4 @@
 #include <nav_msgs/OccupancyGrid.h>
 #include <turtlebot_example/ips_msg.h>
 
-// Change this to the corresponding april tag
-#define TAGID 0
 #define UPDATES_PER_SEC 20

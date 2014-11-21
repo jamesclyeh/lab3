@@ -1,12 +1,17 @@
+#pragma once
+
 #include <math.h>
 #include <nav_msgs/OccupancyGrid.h>
 #include <vector>
 
-class map {
+using namespace std;
+using namespace geometry_msgs;
+
+class Map {
     public:
-        map(const nav_msgs::OccupancyGrid& msg);
-        bool hasObstacle(float x, float y);
-    
+        Map(const nav_msgs::OccupancyGrid& msg);
+        bool hasObstacle(Pose location);
+
     private:
         int mGridWidth;
         int mGridHeight;
