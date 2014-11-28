@@ -19,7 +19,8 @@ Milestone::Milestone(Pose destination) : mOrigin(NULL),
   mDestination(destination), mIsValid(true) {
 }
 
-Pose Milestone::getDestination() {
+Pose Milestone::getDestination() 
+{
   return mDestination;
 }
 
@@ -62,7 +63,7 @@ Milestone* Milestone::makeRandomNode(Map map) {
   uniform_int_distribution<> durationGenerator(1, 3);
   for (int i = 0; i < MAX_RETRY; i++) {
     float velocityLinear = velocityLinearGenerator(gen);
-    uniform_real_distribution<> velocityAngularGenerator(-1.0, 1);
+    uniform_real_distribution<> velocityAngularGenerator(-1.0, 1.0);
     float velocityAngular = velocityAngularGenerator(gen);
     int duration = durationGenerator(gen);
     Milestone* newNode = new Milestone(this, velocityLinear, velocityAngular,

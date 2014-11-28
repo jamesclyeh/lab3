@@ -39,3 +39,5 @@ vector<Milestone*> findPath(Pose start, Pose goal, Map map);
 Milestone* getRandomNode(vector<Milestone*> nodes);
 void insertOrdered(vector<Milestone*>& nodes, Milestone* node, Pose goal);
 void moveRobot(ros::Publisher velPub, vector<Milestone*> route, ros::Rate looprate);
+void move (ros::Publisher velPub, Milestone* mCurMilestone);
+

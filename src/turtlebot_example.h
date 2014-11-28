@@ -10,3 +10,6 @@
 #include <time.h>
 
 #define UPDATES_PER_SEC 20
+
+geometry_msgs::Twist getError(Pose& curPose, Pose mExpectedPose);
+
