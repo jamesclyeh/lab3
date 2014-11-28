@@ -19,7 +19,7 @@ Milestone::Milestone(Pose destination) : mOrigin(NULL),
   mDestination(destination), mIsValid(true) {
 }
 
-Pose Milestone::getDestination() 
+Pose Milestone::getDestination()
 {
   return mDestination;
 }
@@ -59,8 +59,8 @@ Pose Milestone::getDestination(Map map) {
 
 Milestone* Milestone::makeRandomNode(Map map) {
   uniform_real_distribution<> velocityLinearGenerator(0.0, 0.5);
-  
-  uniform_int_distribution<> durationGenerator(1, 3);
+
+  uniform_int_distribution<> durationGenerator(1, 2);
   for (int i = 0; i < MAX_RETRY; i++) {
     float velocityLinear = velocityLinearGenerator(gen);
     uniform_real_distribution<> velocityAngularGenerator(-1.0, 1.0);
@@ -135,7 +135,7 @@ vector<Milestone*> findPath(Pose start, Pose goal, Map map) {
     }
   }
 
-  vector<Milestone*> route;  
+  vector<Milestone*> route;
   if (finalNode == NULL) {
     ROS_INFO("Found no path");
     return route;

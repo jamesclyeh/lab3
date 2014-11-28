@@ -19,7 +19,7 @@ Map* current_map;
 
 // Live
 void pose_callback(const PoseWithCovarianceStamped msg) {
-    if (init) 
+    if (init)
     {
       starting_position = msg.pose.pose;
       //std::cout<< "Starting Position" << tf::getYaw(msg.pose.pose.orientation) << " " << starting_position.position.y << " " << starting_position.position.z << std::endl;
@@ -93,21 +93,39 @@ int main(int argc, char **argv) {
     ROS_INFO("Map received");
 
     Pose goal;
-    goal.position.x = 7;
+    goal.position.x = 6;
     goal.position.y = -4;
     goal.position.z = 0;
-    
-    vector<Milestone*> route = findPath(starting_position, goal, *current_map);
 
+    Pose goal2;
+    goal2.position.x = 7;
+    goal2.position.y = 0;
+    goal2.position.z = 0;
+
+    Pose goal3;
+    goal3.position.x = 4;
+    goal3.position.y = 0;
+    goal3.position.z = 0;
+
+    vector<Milestone*> route = findPath(starting_position, goal, *current_map);
+    goal.orientation = route[route.size()-1]->getDestination().orientation;
+    vector<Milestone*> route2 = findPath(goal, goal2, *current_map);
+
+    goal2.orientation = route2[route2.size()-1]->getDestination().orientation;
+    vector<Milestone*> route3 = findPath(goal2, goal3, *current_map);
+    ROS_INFO("Finished palnning");
+
+    route.insert(route.end(), route2.begin()+1, route2.end());
+    route.insert(route.end(), route3.begin()+1, route3.end());
     //moveRobot(velocity_publisher, route, loop_rate);
     int i = 1;
-    Milestone* start = route[i]; 
-    int max = route.size() - 1;
+    Milestone* start = route[i];
+    int max = route.size();
     float threshold = 0.5;
 
-    while (ros::ok()) 
-    {        
-        if (i < max) 
+    while (ros::ok())
+    {
+        if (i < max)
         {
             float startX = start->getDestination().position.x;
             float startY = start->getDestination().position.y;
@@ -122,16 +140,16 @@ int main(int argc, char **argv) {
                 start = route[i];
                 std::cout << "Node " << i << " Size " << max << " Distance " << distance << std::endl;
             }
-            move(velocity_publisher, start);            
+            move(velocity_publisher, start);
         }
-        
+
         refresh(loop_rate);
-    }  
+    }
 
     return 0;
 }
 
-Pose propogateDynamics(Pose start, float speed, float turnRate) 
+Pose propogateDynamics(Pose start, float speed, float turnRate)
 {
   Pose result = start;
   double roll, pitch, yaw;
@@ -155,22 +173,23 @@ void move (ros::Publisher velPub, Milestone* mCurMilestone)
   Pose curPose = ips_pose;
   float speed = (mCurMilestone)->getVelocityLinear();
   float turnRate = (mCurMilestone)->getVelocityAngular();
+  mCurMilestone->draw(CARROT);
 
   //This propogates the Dynamics based using the starting point can instead use getDestination().
-  starting_position = propogateDynamics(starting_position, speed, turnRate);
+  //starting_position = propogateDynamics(starting_position, speed, turnRate);
 
   Twist vel;
-  
+
   vector<Point> points;
 
-  // plot /indoor_pos 
+  // plot /indoor_pos
   points.push_back(curPose.position);
   Pose closePose = curPose;
 
   closePose.position.x = curPose.position.x + 0.01;
   closePose.position.y = curPose.position.y + 0.01;
   //points.push_back(closePose.position);
-  
+
   //drawLine(CARROT, points);
 
   // feed forward control
@@ -178,10 +197,10 @@ void move (ros::Publisher velPub, Milestone* mCurMilestone)
   // vel.angular.z = turnRate;
 
   // feed back control
-  Twist error = getError(curPose, starting_position);
-  //cout<<"Error x: "<<error.linear.x <<", y: "<<error.linear.y <<", yaw: "<<error.angular.z<<endl;
-  vel.linear.x += 1.0 * error.linear.x;
-  vel.angular.z += 4.0 * error.linear.y;
+  Twist error = getError(curPose, mCurMilestone->getDestination());
+  cout<<"Error x: "<<error.linear.x <<", y: "<<error.linear.y <<", yaw: "<<error.angular.z<<endl;
+  vel.linear.x += 0.5 * error.linear.x;
+  vel.angular.z += 1 * error.linear.y;
   // vel.angular.z -= 0.1 * error.angular.z;
 
   velPub.publish(vel); // Publish the command velocity
@@ -199,7 +218,7 @@ void move (ros::Publisher velPub, Milestone* mCurMilestone)
   return true;*/
 }
 
-geometry_msgs::Twist getError(Pose& curPose, Pose mExpectedPose) 
+geometry_msgs::Twist getError(Pose& curPose, Pose mExpectedPose)
 {
   float xError = mExpectedPose.position.x - curPose.position.x;
   float yError = mExpectedPose.position.y - curPose.position.y;
@@ -237,7 +256,7 @@ void moveRobot(ros::Publisher velPub, vector<Milestone*> route, ros::Rate loop_r
 
     int curr = 1;
     int max = route.size();
-    while (ros::ok()) 
+    while (ros::ok())
     {
         if (curr <= max)
         {
@@ -248,9 +267,9 @@ void moveRobot(ros::Publisher velPub, vector<Milestone*> route, ros::Rate loop_r
             msg.angular.z = temp->getVelocityAngular();
             //std::cout << curr << " " <<  msg.linear.x << " " << msg.angular.z << std::endl;
             velPub.publish(msg);
-            
+
             time(&now);
-            
+
             if (difftime(now,start) >= temp->getDuration())
             {
                 curr++;
@@ -273,11 +292,11 @@ void moveRobot(ros::Publisher velPub, vector<Milestone*> route, ros::Rate loop_r
 
 /*
 void track()
-{ 
+{
 
     int max = route.size();
     int curr = 1;
-    
+
     for (int i = 0; i < route.size() - 1; i++)
     {
         Pose start = route[0]->getDestination();

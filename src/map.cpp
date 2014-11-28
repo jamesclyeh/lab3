@@ -32,7 +32,7 @@ bool Map::getSurroundingCells (Pose location)
     float x = location.position.x;
     float y = location.position.y;
     std::vector<int> coord = xyToGrid(x, y);
-    int tol = 4;
+    int tol = 2;
 
     return (coord[1]+tol>100 ||
             coord[1]-tol<0 ||
@@ -41,8 +41,11 @@ bool Map::getSurroundingCells (Pose location)
             mMap[coord[1]-tol][coord[0]] == 100 ||
             mMap[coord[1]][coord[0]+tol] == 100 ||
             mMap[coord[1]+tol][coord[0]] == 100 ||
-            mMap[coord[1]][coord[0]-tol] == 100);
-
+            mMap[coord[1]][coord[0]-tol] == 100 ||
+            mMap[coord[1]-tol][coord[0]-tol] == 100 ||
+            mMap[coord[1]+tol][coord[0]+tol] == 100 ||
+            mMap[coord[1]-tol][coord[0]+tol] == 100 ||
+            mMap[coord[1]+tol][coord[0]-tol] == 100);
 
 }
 
