@@ -27,6 +27,24 @@ std::vector<int> Map::xyToGrid(float x, float y) {
 
     return coord;
 }
+bool Map::getSurroundingCells (Pose location)
+{
+    float x = location.position.x;
+    float y = location.position.y;
+    std::vector<int> coord = xyToGrid(x, y);
+    int tol = 4;
+
+    return (coord[1]+tol>100 ||
+            coord[1]-tol<0 ||
+            coord[0]+tol>100 ||
+            coord[0]-tol<0 ||
+            mMap[coord[1]-tol][coord[0]] == 100 ||
+            mMap[coord[1]][coord[0]+tol] == 100 ||
+            mMap[coord[1]+tol][coord[0]] == 100 ||
+            mMap[coord[1]][coord[0]-tol] == 100);
+
+
+}
 
 bool Map::hasObstacle(Pose location) {
     float x = location.position.x;

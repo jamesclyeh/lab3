@@ -11,6 +11,7 @@ class Map {
     public:
         Map(const nav_msgs::OccupancyGrid& msg);
         bool hasObstacle(Pose location);
+        bool getSurroundingCells (Pose location);
 
     private:
         int mGridWidth;

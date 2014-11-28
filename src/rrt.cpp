@@ -43,7 +43,7 @@ Pose Milestone::getDestination(Map map) {
           tf::createQuaternionFromRPY(r, p, yaw),
           destination.orientation);
       //ROS_INFO("Check obstacle exist.");
-      if (map.hasObstacle(destination)) {
+      if (map.hasObstacle(destination) || map.getSurroundingCells(destination)) {
         //ROS_INFO("Fail node");
         return mDestination;
       }
@@ -57,11 +57,12 @@ Pose Milestone::getDestination(Map map) {
 }
 
 Milestone* Milestone::makeRandomNode(Map map) {
-  uniform_real_distribution<> velocityLinearGenerator(0, 0.3);
-  uniform_real_distribution<> velocityAngularGenerator(-0.3, 0.3);
+  uniform_real_distribution<> velocityLinearGenerator(0.0, 0.5);
+  
   uniform_int_distribution<> durationGenerator(1, 3);
   for (int i = 0; i < MAX_RETRY; i++) {
     float velocityLinear = velocityLinearGenerator(gen);
+    uniform_real_distribution<> velocityAngularGenerator(-1.0, 1);
     float velocityAngular = velocityAngularGenerator(gen);
     int duration = durationGenerator(gen);
     Milestone* newNode = new Milestone(this, velocityLinear, velocityAngular,
@@ -95,7 +96,7 @@ void insertOrdered(vector<Milestone*>& nodes, Milestone* node, Pose goal) {
 Milestone* getRandomNode(vector<Milestone*> nodes) {
   uniform_real_distribution<> picker(0, 1);
   for(int i = 0; i < nodes.size(); i++) {
-    bool pick = picker(gen) > 0.6 ? true:false;
+    bool pick = picker(gen) > 0.7 ? true:false;
     if (pick) {
       ROS_INFO("Picked node %d", i);
       return nodes[i];
@@ -113,25 +114,31 @@ vector<Milestone*> findPath(Pose start, Pose goal, Map map) {
   tree.push_back(new Milestone(start));
   for (int i = 0; i < MAX_BRANCH; i++) {
     Milestone* branchRoot = getRandomNode(tree);
-    ROS_INFO("Try to create random Node");
+    //ROS_INFO("Try to create random Node");
     Milestone* newBranch = branchRoot->makeRandomNode(map);
     if (newBranch == NULL) {
-      ROS_INFO("No valid random node created");
+      //ROS_INFO("No valid random node created");
       continue;
     } else {
+      //ROS_INFO("Insert node");
       insertOrdered(tree, newBranch, goal);
+      //ROS_INFO("Draw branch");
       newBranch->draw(RANDOM_TREE);
     }
     float distanceToGoal = getDistance(newBranch->getDestination(), goal);
-    ROS_INFO("Distance to goal: %f", distanceToGoal);
+    //ROS_INFO("Distance to goal: %f", distanceToGoal);
     if (distanceToGoal < 0.3) {
       finalNode = newBranch;
-      ROS_INFO("End position: x: %f, y: %f", finalNode->getDestination().position.x, finalNode->getDestination().position.y);
+      //ROS_INFO("End position: x: %f, y: %f", finalNode->getDestination().position.x, finalNode->getDestination().position.y);
       break;
     }
   }
 
-  vector<Milestone*> route;
+  vector<Milestone*> route;  
+  if (finalNode == NULL) {
+    ROS_INFO("Found no path");
+    return route;
+  }
   route.push_back(finalNode);
   while(finalNode->getOrigin() != NULL) {
     route.push_back(finalNode->getOrigin());

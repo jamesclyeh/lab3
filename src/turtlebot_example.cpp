@@ -20,6 +20,7 @@ Map* current_map;
 void pose_callback(const PoseWithCovarianceStamped msg) {
     if (init) {
       starting_position = msg.pose.pose;
+      std::cout<< "Starting Position" << tf::getYaw(msg.pose.pose.orientation) << " " << starting_position.position.y << " " << starting_position.position.z << std::endl;
       init = false;
     }
 }
@@ -90,13 +91,83 @@ int main(int argc, char **argv) {
 
     Pose goal;
     goal.position.x = 7;
-    goal.position.y = 4;
+    goal.position.y = -4;
     goal.position.z = 0;
     vector<Milestone*> route = findPath(starting_position, goal, *current_map);
+   
     //drawCurve(1, route);
-    while (ros::ok()) {
-        refresh(loop_rate);
-    }
+    moveRobot(velocity_publisher, route, loop_rate);   
 
     return 0;
+}
+
+void moveRobot(ros::Publisher velPub, vector<Milestone*> route, ros::Rate loop_rate)
+{
+    time_t start;
+    time(&start);
+    time_t now;
+
+    //Pose curpose = 
+    //Pose nextpose = route[i]
+    while (ros::ok()) 
+    {
+        if (curr <= max)
+        {
+            //std::cout << " Move Robot " << std::endl;
+            Milestone* temp = route[curr];
+            geometry_msgs::Twist msg;
+            msg.linear.x = temp->getVelocityLinear();
+            msg.angular.z = temp->getVelocityAngular();
+            //std::cout << curr << " " <<  msg.linear.x << " " << msg.angular.z << std::endl;
+            velPub.publish(msg);
+            
+            time(&now);
+            
+            if (difftime(now,start) >= temp->getDuration())
+            {
+                curr++;
+                time(&start);
+            }
+        }
+        else
+        {
+            std::cout << " Move Robot " << std::endl;
+            geometry_msgs::Twist msg;
+            msg.linear.x = 0;
+            msg.angular.z = 0;
+            velPub.publish(msg);
+        }
+
+
+        refresh(loop_rate);
+    }
+};
+
+void track()
+{ 
+    
+    int max = route.size();
+    int curr = 1;
+    
+    for (int i = 0; i < route.size() - 1; i++)
+    {
+    Pose start = route[0]->getDestination();
+    Pose next = route[1]->getDestination();
+
+    float startX = start.position.x;
+    float startY = start.position.y;
+    float curryaw = tf::getYaw(start.orientation);
+
+    float nextX = next.position.x;
+    float nextY = next.position.y;
+    float nextyaw = tf::getYaw(next.orientation);
+
+    float diff = nextyaw - curryaw;
+
+    float error = sqrt(pow((startX- nextX),2) + pow((startY - nextY),2));
+
+    while (error < threshold)
+    {
+
+    }
 }

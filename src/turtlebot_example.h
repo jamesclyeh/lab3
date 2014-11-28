@@ -7,6 +7,6 @@
 #include <gazebo_msgs/ModelStates.h>
 #include <visualization_msgs/Marker.h>
 #include <nav_msgs/OccupancyGrid.h>
-#include <turtlebot_example/ips_msg.h>
+#include <time.h>
 
 #define UPDATES_PER_SEC 20
